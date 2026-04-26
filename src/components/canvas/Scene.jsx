@@ -2,17 +2,13 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Environment } from '@react-three/drei';
 
-/**
- * Hook: returns true while the wrapped element is inside (or near) the viewport.
- * We use it to pause R3F render loops on off-screen canvases.
- */
 function useInView(ref, rootMargin = '200px') {
   const [inView, setInView] = useState(true);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') return;
     const obs = new IntersectionObserver(
-      ([entry]) => setInView(entry.isIntersecting),
+      ([entry]) => setInView((v) => (v === entry.isIntersecting ? v : entry.isIntersecting)),
       { rootMargin }
     );
     obs.observe(el);
@@ -21,10 +17,10 @@ function useInView(ref, rootMargin = '200px') {
   return inView;
 }
 
-const cappedDpr = () => {
-  if (typeof window === 'undefined') return 1.25;
-  return Math.min(window.devicePixelRatio || 1, 1.5);
-};
+const CAPPED_DPR =
+  typeof window === 'undefined' ? 1.25 : Math.min(window.devicePixelRatio || 1, 1.5);
+
+const GL_OPTS = { antialias: true, alpha: true, powerPreference: 'high-performance' };
 
 /**
  * Scene — reusable Canvas wrapper.
@@ -50,14 +46,14 @@ export default function Scene({
     <div ref={wrapRef} className="scene-wrap">
       <Canvas
         className={className}
-        dpr={dpr ?? cappedDpr()}
+        dpr={dpr ?? CAPPED_DPR}
         frameloop={frameloop}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={GL_OPTS}
         camera={{ position: cameraPosition, fov }}
       >
         {background && <color attach="background" args={['#04050b']} />}
 
-        {/* Cinematic 3-point + rim lighting (cheap, no shadow maps) */}
+        {/* 3-point + rim — no shadow maps to keep this cheap */}
         <ambientLight intensity={0.35} />
         <directionalLight position={[6, 6, 6]} intensity={1.4} color="#ffffff" />
         <directionalLight position={[-5, 3, -2]} intensity={0.9} color="#5b8cff" />

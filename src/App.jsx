@@ -12,36 +12,32 @@ import Footer from './components/Footer';
 function CursorGlow() {
   const ref = useRef(null);
   useEffect(() => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    if (window.matchMedia?.('(pointer: coarse)').matches) return;
+
     let raf = 0;
-    let tx = 0, ty = 0; // target
-    let cx = window.innerWidth / 2, cy = window.innerHeight / 2; // current
+    let targetX = 0, targetY = 0;
+    let currentX = window.innerWidth / 2, currentY = window.innerHeight / 2;
 
     const onMove = (e) => {
-      tx = e.clientX;
-      ty = e.clientY;
-    };
-    const onTouch = (e) => {
-      if (!e.touches?.[0]) return;
-      tx = e.touches[0].clientX;
-      ty = e.touches[0].clientY;
+      targetX = e.clientX;
+      targetY = e.clientY;
     };
 
     const tick = () => {
-      cx += (tx - cx) * 0.12;
-      cy += (ty - cy) * 0.12;
+      currentX += (targetX - currentX) * 0.12;
+      currentY += (targetY - currentY) * 0.12;
       if (ref.current) {
-        ref.current.style.transform = `translate3d(${cx - 320}px, ${cy - 320}px, 0)`;
+        ref.current.style.transform = `translate3d(${currentX - 320}px, ${currentY - 320}px, 0)`;
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
 
     window.addEventListener('mousemove', onMove);
-    window.addEventListener('touchmove', onTouch, { passive: true });
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('touchmove', onTouch);
     };
   }, []);
   return <div ref={ref} className="cursor-glow" aria-hidden />;

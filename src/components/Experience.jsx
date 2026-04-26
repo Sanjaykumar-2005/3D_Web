@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plane, Building2, Music2, Mountain, Play, Pause, Volume2 } from 'lucide-react';
 import Scene from './canvas/Scene';
@@ -50,24 +50,30 @@ const modes = [
 
 export default function Experience() {
   const [active, setActive] = useState(0);
+  const sectionRef = useRef(null);
   const m = modes[active];
-  const { playing, toggle, getAmplitude } = useAudioSynth({ baseFreq: m.freq });
+  const { playing, toggle, setFreq, getAmplitude } = useAudioSynth({ baseFreq: m.freq });
 
-  // Keyboard navigation when section is in view
+  useEffect(() => {
+    if (playing) setFreq(m.freq);
+  }, [playing, m.freq, setFreq]);
+
   useEffect(() => {
     const onKey = (e) => {
-      const section = document.getElementById('experience');
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      const t = e.target;
+      if (t && t.matches && t.matches('input, textarea, [contenteditable=""], [contenteditable="true"]')) return;
+      const section = sectionRef.current;
       if (!section) return;
       const rect = section.getBoundingClientRect();
       const inView = rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3;
       if (!inView) return;
-      if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        setActive((i) => (i + 1) % modes.length);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        setActive((i) => (i - 1 + modes.length) % modes.length);
-      }
+      e.preventDefault();
+      setActive((i) =>
+        e.key === 'ArrowRight'
+          ? (i + 1) % modes.length
+          : (i - 1 + modes.length) % modes.length
+      );
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -75,6 +81,7 @@ export default function Experience() {
 
   return (
     <section
+      ref={sectionRef}
       className="experience"
       id="experience"
       style={{
@@ -163,7 +170,6 @@ export default function Experience() {
         >
           <Scene cameraPosition={[0, 0, 6]} fov={50} environment={false}>
             <AudioVisualizer
-              key={m.id}
               count={500}
               radius={6}
               color={m.color}

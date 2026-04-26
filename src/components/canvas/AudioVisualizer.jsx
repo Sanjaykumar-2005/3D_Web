@@ -108,7 +108,7 @@ export function SoundRings({ color = '#a85bff', count = 5, amplitude }) {
     group.current.rotation.x = Math.sin(t * 0.2) * 0.2 + state.mouse.y * 0.2;
   });
 
-  const rings = Array.from({ length: count });
+  const rings = useMemo(() => Array.from({ length: count }), [count]);
 
   return (
     <group ref={group}>
